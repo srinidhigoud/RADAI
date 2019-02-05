@@ -1,6 +1,6 @@
 # RADAI
 
-##Using Class Activation Maps (CAM) to localize Liver in CT scans
+## Using Class Activation Maps (CAM) to localize Liver in CT scans
 
 As given in this [paper](https://arxiv.org/pdf/1512.04150.pdf) I use class activation maps extracted from densetnet's last layer.
 I downloaded a pre trained (on CIFAR dataset for instance segmentation) densenet froze the entire network except the last and trained to classify liver and no liver images.
