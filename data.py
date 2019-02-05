@@ -11,7 +11,32 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils, models
 from PIL import Image
 import warnings
+import argparse
 warnings.filterwarnings("ignore")
+
+
+
+
+parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+parser.add_argument('data', metavar='DIR', default = '/scratch/sgm400/RADAI/data/'
+                    help='path to dataset')
+parser.add_argument('--epochs', default=10, type=int, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('--epoch', default=0, type=int, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('--batchsize', default=32, type=int, metavar='N',
+                    help='Batch size for training')
+parser.add_argument('--imgsize', default=224, type=int, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('--classes', default=2, type=int, metavar='N',
+                    help='number of classes in the dataset')
+parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
+                    metavar='LR', help='initial learning rate')
+parser.add_argument('--feature_extract', dest='feature_extract', action='store_true',
+                    help='do feature extracting')
+
+
+
 
 def set_parameter_requires_grad(model, feature_extracting):
     if feature_extracting:
@@ -34,24 +59,30 @@ class LiverDataset(Dataset):
         return image,label
 
 
-# "/Users/srinidhigoud/Desktop/RADAI/data/radai_challenge/train256/images_pngs_noliver"
-cwd = os.getcwd()
-# dir1 = os.path.join(cwd,"data/radai_challenge/train256/images_pngs_noliver")
-# dir2 = os.path.join(cwd,"data/radai_challenge/train256/images_pngs_liver")
-dir1 = "/scratch/sgm400/RADAI/data/radai_challenge/train256/images_pngs_noliver"
-dir2 = "/scratch/sgm400/RADAI/data/radai_challenge/train256/images_pngs_liver"
-# print(dir1)
+dir1 = os.path.join(args.data,"train256/images_pngs_noliver")
+dir2 = os.path.join(args.data,"train256/images_pngs_liver")
+dir3 = os.path.join(args.data,"test256/images_pngs")
 raw_data = {'dir':[],'label':[]}
+raw_data_test = {'dir':[],'label':[]}
 for filename in os.listdir(dir1):
     file = os.path.join(dir1,filename)
-    raw_data['dir'].append(file)
-    raw_data['label'].append(0)
+    if file[-3:] == "png":
+        raw_data['dir'].append(file)
+        raw_data['label'].append(0)
 for filename in os.listdir(dir2):
     file = os.path.join(dir2,filename)
-    raw_data['dir'].append(file)
-    raw_data['label'].append(1)
+    if file[-3:] == "png":
+        raw_data['dir'].append(file)
+        raw_data['label'].append(1)
+for filename in os.listdir(dir3):
+    file = os.path.join(dir3,filename)
+    if file[-3:] == "png":
+        raw_data_test['dir'].append(file)
+        raw_data_test['label'].append(1)
 df = pd.DataFrame(raw_data, columns = ['dir','label'])
 df.to_csv('data.csv')
+dftest = pd.DataFrame(raw_data_test, columns = ['dir','label'])
+dftest.to_csv('testdata.csv')
 
 # prepare data
 normalize = transforms.Normalize(
@@ -60,32 +91,35 @@ normalize = transforms.Normalize(
 )
 
 transform_train = transforms.Compose([
-    transforms.RandomResizedCrop(224),
+    transforms.RandomResizedCrop(args.imgsize),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     normalize
 ])
-num_classes = 2
-BATCH_SIZE      = 32
-IMG_SIZE        = 224
-epoch           = 0
-epochs = 10
-feature_extract = True
+
+preprocess = transforms.Compose([
+   transforms.Resize((224,224)),
+   transforms.ToTensor(),
+   normalize
+])
 
 liverDataset = LiverDataset(csv_file='data.csv',transform = transform_train)
-trainLoader = DataLoader(liverDataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+trainLoader = DataLoader(liverDataset, batch_size=args.batchsize, shuffle=True, num_workers=2)
 classes = {0: 'no_liver', 1: 'liver'}
-net = models.resnet18(pretrained=True)
-set_parameter_requires_grad(net, feature_extract)
-num_ftrs = net.fc.in_features
-net.fc = nn.Linear(num_ftrs, num_classes)
+#net = models.resnet18(pretrained=True)
+net = models.densenet161(pretrained=True)
+set_parameter_requires_grad(net, args.feature_extract)
+#num_ftrs = net.fc.in_features
+#net.fc = nn.Linear(num_ftrs, num_classes)
+num_ftrs = net.classifier.in_features
+net.classifier = nn.Linear(num_ftrs, args.classes)
 print(net)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 net = net.to(device)
 finalconv_name = 'features'
 
 criteria = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr = 0.005, momentum = 0.5)
+optimizer = optim.SGD(net.parameters(), lr = 0.01, momentum = 0.5)
 def train (model, loader, criterion):
     model.train()
     current_loss = 0
@@ -105,37 +139,19 @@ def train (model, loader, criterion):
         
     return epoch_loss, epoch_acc
 
-# #define validation function
-# def validation (model, loader, criterion, gpu):
-#     model.eval()
-#     valid_loss = 0
-#     valid_correct = 0
-#     for valid, y_valid in iter(loader):
-#         if gpu:
-#             valid, y_valid = valid.to('cuda'), y_valid.to('cuda')
-#         output = model.forward(valid)
-#         valid_loss += criterion(output, y_valid).item()*valid.size(0)
-#         equal = (output.max(dim=1)[1] == y_valid.data)
-#         valid_correct += torch.sum(equal)#type(torch.FloatTensor)
-    
-#     epoch_loss = valid_loss / len(validLoader.dataset)
-#     epoch_acc = valid_correct.double() / len(validLoader.dataset)
-    
-#     return epoch_loss, epoch_acc
 
-
-for e in range(epochs):
+epoch       = args.epoch
+for e in range(arg.epochs):
     epoch +=1
     print(epoch)
     with torch.set_grad_enabled(True):
         epoch_train_loss, epoch_train_acc = train(net,trainLoader, criteria)
     print("Epoch: {} Train Loss : {:.4f}  Train Accuracy: {:.4f}".format(epoch,epoch_train_loss,epoch_train_acc))
-# with torch.no_grad():
-#         epoch_val_loss, epoch_val_acc = validation(model, validLoader, criteria, args.gpu)
-#     print("Epoch: {} Validation Loss : {:.4f}  Validation Accuracy {:.4f}".format(epoch,epoch_val_loss,epoch_val_acc))
 
-# img,label = liverDataset[10]
-# print(len(img))
-
+#Better way to save the chepoints is to keep track of the best performing with respect to test accuracy model and save it
+file_name = "checkpoint_densenettrained.pth"
+torch.save(net.state_dict(), file_name)
+check_path = Path(file_name)
+print("File Size: {} K".format(check_path.stat().st_size/10**3))
 
 

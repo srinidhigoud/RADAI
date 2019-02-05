@@ -1,0 +1,4 @@
+*.csv
+*.sbatch
+*.DS_Store
+*.pth
