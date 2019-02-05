@@ -19,4 +19,4 @@ To generate masks run
 ```
 python generatemasks.py data generatecsv
 ```
-The file geenrated are stored in test256/out (both mask and image merged) and test256/outmasks (just the masks). 
+The file generated are stored in test256/out (both mask and image merged) and test256/outmasks (just the masks). 
