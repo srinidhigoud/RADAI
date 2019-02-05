@@ -4,18 +4,18 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-import utils
-from utils import *
+import util
+from util import *
 
-args = utils.get_args()
+args = util.get_args()
 if(args.generatecsv):
-    utils.generateCSV(args.data)
-liverDataset = utils.LiverDataset(csv_file='data.csv',transform = utils.transform_train)
+    util.generateCSV(args.data)
+liverDataset = util.LiverDataset(csv_file='data.csv',transform = util.transform_train)
 trainLoader = DataLoader(liverDataset, batch_size=args.batchsize, shuffle=True, num_workers=2)
 classes = {0: 'no_liver', 1: 'liver'}
 #net = models.resnet18(pretrained=True)
 net = models.densenet161(pretrained=True)
-utils.set_parameter_requires_grad(net, args.feature_extract)
+util.set_parameter_requires_grad(net, args.feature_extract)
 #num_ftrs = net.fc.in_features
 #net.fc = nn.Linear(num_ftrs, num_classes)
 num_ftrs = net.classifier.in_features
@@ -47,7 +47,7 @@ def train (model, loader, criterion):
 
 
 epoch = args.epoch
-for e in range(arg.epochs):
+for e in range(args.epochs):
     epoch +=1
     print(epoch)
     with torch.set_grad_enabled(True):

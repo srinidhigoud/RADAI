@@ -6,6 +6,7 @@ from __future__ import print_function
 import os
 import torch
 import pandas as pd
+from PIL import Image
 from skimage import io, transform
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils, models
@@ -17,9 +18,8 @@ warnings.filterwarnings("ignore")
 
 
 def get_args():
-
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-    parser.add_argument('data', metavar='DIR', default = '/scratch/sgm400/RADAI/data/'
+    parser.add_argument('--data', metavar='DIR', default ='/scratch/sgm400/RADAI/data/',
                         help='path to dataset')
     parser.add_argument('--epochs', default=10, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -35,9 +35,9 @@ def get_args():
                         metavar='LR', help='initial learning rate')
     parser.add_argument('--feature_extract', dest='feature_extract', action='store_true',
                         help='do feature extracting')
-    parser.add_argument('--generatecsv', dest='geenratecsv', action='store_true',
+    parser.add_argument('--generatecsv', dest='generatecsv', action='store_false',
                         help='Generate csv files for data')
-
+    args = parser.parse_args()
     return args
 
 
@@ -94,7 +94,7 @@ normalize = transforms.Normalize(
 )
 
 transform_train = transforms.Compose([
-    transforms.RandomResizedCrop(args.imgsize),
+    transforms.RandomResizedCrop(224),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     normalize

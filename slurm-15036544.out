@@ -1,2 +1,0 @@
-/home/sgm400/anaconda3/envs/py36/lib/python3.6/site-packages/torchvision/models/densenet.py:212: UserWarning: nn.init.kaiming_normal is now deprecated in favor of nn.init.kaiming_normal_.
-  nn.init.kaiming_normal(m.weight.data)

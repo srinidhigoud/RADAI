@@ -2,3 +2,4 @@
 *.sbatch
 *.DS_Store
 *.pth
+*.out

@@ -1,5 +1,5 @@
-import utils
-from utils import *
+import util
+from util import *
 import io
 import torch.nn as nn
 from torch.autograd import Variable
@@ -9,9 +9,9 @@ import cv2
 
 
 # input image
-args = utils.get_args()
+args = util.get_args()
 if(args.generatecsv):
-    utils.generateCSV(args.data)
+    util.generateCSV(args.data)
 
 
 cwd = os.getcwd()
@@ -59,7 +59,7 @@ def returnCAM(feature_conv, weight_softmax, class_idx):
     return output_cam
 
 
-liverDataset = utils.LiverDataset(csv_file='testdata.csv',transform = utils.preprocess)
+liverDataset = util.LiverDataset(csv_file='testdata.csv',transform = util.preprocess)
 
 # response = requests.get(IMG_URL)
 def run(image, label, imagename, outname, outnamemask):
